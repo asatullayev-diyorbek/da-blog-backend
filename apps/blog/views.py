@@ -86,7 +86,7 @@ class FeaturedPostView(APIView):
         post = Post.objects.filter(published=True, featured=True).select_related("category", "author").prefetch_related("tags").first()
         if not post:
             return Response(None)
-        return Response(PostListSerializer(post).data)
+        return Response(PostListSerializer(post, context={"request": request}).data)
 
 
 class StatsView(APIView):
