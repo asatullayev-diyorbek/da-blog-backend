@@ -169,6 +169,8 @@ class ArenaStartView(APIView):
             return Response({"detail": "Arenani faqat egasi boshlashi mumkin."}, status=403)
         if arena.status != "waiting":
             return Response({"detail": "Arena holatini o'zgartirib bo'lmaydi."}, status=400)
+        if arena.participants.count() < 2:
+            return Response({"detail": "Jangni boshlash uchun kamida 2 ta jangchi kerak."}, status=400)
         arena.status = "started"
         arena.started_at = timezone.now()
         arena.save(update_fields=["status", "started_at"])
