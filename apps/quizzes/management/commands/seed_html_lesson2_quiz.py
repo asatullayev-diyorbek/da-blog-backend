@@ -49,7 +49,7 @@ class Command(BaseCommand):
         quiz, _ = Quiz.objects.update_or_create(
             slug="html-2-dars-asosiy-teglar-28-test",
             defaults={
-                "title": "HTML 2-dars: Asosiy teglar — 28 ta test",
+                "title": "HTML 2-dars: Asosiy teglar — 29 ta test",
                 "description": "HTML fayl tuzilmasi, sarlavha, paragraf, formatlash, indeks va comment teglari.",
                 "lesson": lesson,
                 "course": course,
