@@ -17,6 +17,16 @@ from .serializers import QuestionSerializer, QuizAttemptSerializer, QuizDetailSe
 from .services import award_arena_points, award_attempt_points
 
 
+ARENA_WAITING_TTL = timedelta(minutes=30)
+
+
+def expire_waiting_arena(arena):
+    if arena.status == "waiting" and timezone.now() - arena.created_at >= ARENA_WAITING_TTL:
+        arena.status = "cancelled"
+        arena.save(update_fields=["status"])
+    return arena
+
+
 class QuizListView(APIView):
     permission_classes = [AllowAny]
 
@@ -140,6 +150,7 @@ class ArenaDetailView(APIView):
 
     def get(self, request, code):
         arena = get_object_or_404(Arena.objects.select_related("owner"), code=code)
+        expire_waiting_arena(arena)
         return Response(arena_payload(arena, request))
 
 
@@ -148,6 +159,9 @@ class ArenaJoinView(APIView):
 
     def post(self, request, code):
         arena = get_object_or_404(Arena.objects.select_related("owner"), code=code)
+        expire_waiting_arena(arena)
+        if arena.status == "cancelled":
+            return Response({"detail": "Bu arena muddati tugagani uchun yopilgan."}, status=400)
         if arena.status != "waiting":
             return Response({"detail": "Bu arena allaqachon boshlangan yoki yakunlangan."}, status=400)
         if arena.participants.count() >= arena.max_players and not arena.participants.filter(user=request.user).exists():
@@ -165,6 +179,7 @@ class ArenaStartView(APIView):
 
     def post(self, request, code):
         arena = get_object_or_404(Arena.objects.select_related("owner"), code=code)
+        expire_waiting_arena(arena)
         if arena.owner_id != request.user.id:
             return Response({"detail": "Arenani faqat egasi boshlashi mumkin."}, status=403)
         if arena.status != "waiting":
