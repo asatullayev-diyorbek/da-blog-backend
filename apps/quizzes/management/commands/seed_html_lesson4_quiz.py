@@ -44,9 +44,9 @@ class Command(BaseCommand):
             raise CommandError("HTML kursi yoki 4-dars topilmadi.")
 
         quiz, _ = Quiz.objects.update_or_create(
-            slug="html-4-dars-royxatlar-25-test",
+            slug="html-4-dars-royxatlar-26-test",
             defaults={
-                "title": "HTML 4-dars: Ro'yxatlar — 25 ta test",
+                "title": "HTML 4-dars: Ro'yxatlar — 26 ta test",
                 "description": "ul, ol, li, ol atributlari, ichma-ich ro'yxatlar va navigatsiya menyusi.",
                 "lesson": lesson,
                 "course": course,
