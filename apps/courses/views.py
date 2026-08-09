@@ -46,7 +46,7 @@ class LessonDetailView(APIView):
             raise NotFound("Kurs topilmadi.")
 
         try:
-            lesson = Lesson.objects.get(course=course, slug=lesson_slug)
+            lesson = Lesson.objects.prefetch_related("quizzes__questions__options").get(course=course, slug=lesson_slug)
         except Lesson.DoesNotExist:
             raise NotFound("Dars topilmadi.")
 

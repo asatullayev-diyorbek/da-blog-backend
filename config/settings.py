@@ -1,6 +1,7 @@
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
+from corsheaders.defaults import default_headers
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,6 +28,7 @@ INSTALLED_APPS = [
     "apps.users",
     "apps.blog",
     "apps.courses",
+    "apps.quizzes",
 ]
 
 MIDDLEWARE = [
@@ -141,15 +143,26 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
-    default="http://localhost:5173",
+    default="http://localhost:5173,http://127.0.0.1:5173",
 ).split(",")
+CORS_ALLOWED_ORIGINS = list({origin.strip() for origin in CORS_ALLOWED_ORIGINS if origin.strip()} | {
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+})
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = (*default_headers, "x-guest-id")
 
 # ── Telegram ───────────────────────────────────────────────────────────────────
 
 TELEGRAM_BOT_TOKEN = config("TELEGRAM_BOT_TOKEN", default="")
 TELEGRAM_CHAT_ID = config("TELEGRAM_CHAT_ID", default="")
+TELEGRAM_BOT_USERNAME = config("TELEGRAM_BOT_USERNAME", default="")
 
 # ── Unfold Admin ──────────────────────────────────────────────────────────────
 

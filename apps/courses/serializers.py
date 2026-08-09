@@ -2,18 +2,23 @@ from rest_framework import serializers
 from apps.blog.serializers import CategorySerializer
 from apps.users.serializers import UserSerializer
 from .models import Course, Lesson
+from apps.quizzes.serializers import QuizListSerializer
 
 
 class LessonListSerializer(serializers.ModelSerializer):
+    quizzes_count = serializers.IntegerField(source="quizzes.count", read_only=True)
+
     class Meta:
         model = Lesson
-        fields = ["id", "order", "title", "slug", "duration", "is_free", "video_id"]
+        fields = ["id", "order", "title", "slug", "duration", "is_free", "video_id", "quizzes_count"]
 
 
 class LessonDetailSerializer(serializers.ModelSerializer):
+    quizzes = QuizListSerializer(many=True, read_only=True)
+
     class Meta:
         model = Lesson
-        fields = ["id", "order", "title", "slug", "duration", "is_free", "video_id", "content"]
+        fields = ["id", "order", "title", "slug", "duration", "is_free", "video_id", "content", "quizzes"]
 
 
 class CourseListSerializer(serializers.ModelSerializer):
