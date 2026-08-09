@@ -412,7 +412,7 @@ class LeaderboardView(APIView):
                 user_rank = index
             avatar = row["user__avatar"]
             if avatar and not avatar.startswith("http"):
-                avatar = f"{settings.MEDIA_URL}{avatar.lstrip('/')}"
+                avatar = request.build_absolute_uri(f"{settings.MEDIA_URL}{avatar.lstrip('/')}" )
             full_name = row["user__telegram_full_name"] or " ".join(filter(None, [row["user__first_name"], row["user__last_name"]])) or row["user__username"]
             result.append({"rank": index, "username": row["user__username"], "full_name": full_name, "avatar": avatar, "points": row["points"], "is_me": request.user.is_authenticated and row["user_id"] == request.user.id})
         return Response({"period": period, "user_rank": user_rank, "results": result})
