@@ -199,13 +199,15 @@ def arena_game_payload(arena, participant, request=None):
     question_index = min(elapsed // arena.question_duration, arena.question_count - 1)
     remaining_seconds = arena.question_duration - (elapsed % arena.question_duration)
     arena_question = arena.questions.select_related("question").prefetch_related("question__options").get(order=question_index + 1)
-    answered = participant.answers.filter(question=arena_question.question).exists()
+    answer = participant.answers.filter(question=arena_question.question).first()
+    answered = answer is not None
     return {
         "status": arena.status,
         "question_index": question_index,
         "question_count": arena.question_count,
         "remaining_seconds": remaining_seconds,
         "answered": answered,
+        "selected_option_id": answer.selected_option_id if answer else None,
         "question": QuestionSerializer(arena_question.question).data,
         "participants": arena_payload(arena, request)["participants"],
     }
