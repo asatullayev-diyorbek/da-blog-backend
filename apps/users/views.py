@@ -1,3 +1,6 @@
+import secrets
+
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -8,6 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import TelegramAuthSession, TelegramLoginCode, User
 from .serializers import UserSerializer
 from .telegram import create_auth_session, download_avatar, issue_user_tokens, save_avatar, upsert_telegram_user
+from .telegram_bot import process_update
 
 
 class TelegramAuthStartView(APIView):
@@ -95,6 +99,22 @@ class TelegramLoginView(APIView):
             "refresh": str(refresh),
             "user": UserSerializer(user, context={"request": request}).data,
         })
+
+
+class TelegramWebhookView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        supplied_secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+        if not settings.TELEGRAM_WEBHOOK_SECRET or not secrets.compare_digest(
+            supplied_secret, settings.TELEGRAM_WEBHOOK_SECRET
+        ):
+            return Response({"detail": "Webhook secret noto'g'ri."}, status=403)
+        try:
+            process_update(request.data)
+        except Exception:
+            return Response({"detail": "Telegram update qayta ishlanmadi."}, status=500)
+        return Response({"ok": True})
 
 
 class MeView(APIView):

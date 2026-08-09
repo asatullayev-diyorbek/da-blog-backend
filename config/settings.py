@@ -163,6 +163,7 @@ CORS_ALLOW_HEADERS = (*default_headers, "x-guest-id")
 TELEGRAM_BOT_TOKEN = config("TELEGRAM_BOT_TOKEN", default="")
 TELEGRAM_CHAT_ID = config("TELEGRAM_CHAT_ID", default="")
 TELEGRAM_BOT_USERNAME = config("TELEGRAM_BOT_USERNAME", default="")
+TELEGRAM_WEBHOOK_SECRET = config("TELEGRAM_WEBHOOK_SECRET", default="")
 
 # ── Unfold Admin ──────────────────────────────────────────────────────────────
 
