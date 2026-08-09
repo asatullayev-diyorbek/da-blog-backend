@@ -431,9 +431,13 @@ class LeaderboardView(APIView):
     def get(self, request):
         period = request.query_params.get("period", "all")
         transactions = PointTransaction.objects.all()
-        if period in ("week", "month"):
-            days = 7 if period == "week" else 30
-            transactions = transactions.filter(created_at__date__gte=timezone.localdate() - timedelta(days=days - 1))
+        today = timezone.localdate()
+        if period == "week":
+            week_start = today - timedelta(days=today.weekday())
+            transactions = transactions.filter(created_at__date__gte=week_start)
+        elif period == "month":
+            month_start = today.replace(day=1)
+            transactions = transactions.filter(created_at__date__gte=month_start)
         rows = list(transactions.values("user_id", "user__username", "user__first_name", "user__last_name", "user__telegram_full_name", "user__avatar").annotate(points=Sum("points")).order_by("-points", "user__username")[:100])
         today_start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
         previous_transactions = transactions.filter(created_at__lt=today_start)
