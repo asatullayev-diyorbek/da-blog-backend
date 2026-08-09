@@ -195,12 +195,16 @@ def arena_game_payload(arena, participant, request=None):
     finish_arena_if_needed(arena)
     if arena.status == "finished":
         return {"status": "finished", "participants": arena_payload(arena, request)["participants"]}
-    elapsed = max(0, int((timezone.now() - arena.started_at).total_seconds()))
-    question_index = min(elapsed // arena.question_duration, arena.question_count - 1)
-    remaining_seconds = arena.question_duration - (elapsed % arena.question_duration)
+    answered_count = participant.answers.count()
+    question_index = min(answered_count, arena.question_count - 1)
+    last_answer = participant.answers.order_by("-answered_at", "-id").first()
+    question_started_at = last_answer.answered_at if last_answer else arena.started_at
+    elapsed = max(0, int((timezone.now() - question_started_at).total_seconds()))
+    remaining_seconds = max(0, arena.question_duration - elapsed)
     arena_question = arena.questions.select_related("question").prefetch_related("question__options").get(order=question_index + 1)
     answer = participant.answers.filter(question=arena_question.question).first()
     answered = answer is not None
+    correct_option = arena_question.question.options.filter(is_correct=True).first() if answer else None
     return {
         "status": arena.status,
         "question_index": question_index,
@@ -208,6 +212,8 @@ def arena_game_payload(arena, participant, request=None):
         "remaining_seconds": remaining_seconds,
         "answered": answered,
         "selected_option_id": answer.selected_option_id if answer else None,
+        "is_correct": answer.is_correct if answer else None,
+        "correct_option_id": correct_option.id if correct_option else None,
         "question": QuestionSerializer(arena_question.question).data,
         "participants": arena_payload(arena, request)["participants"],
     }
@@ -259,7 +265,14 @@ class ArenaGameView(APIView):
         participant.correct_answers += int(is_correct)
         participant.total_time += response_time
         participant.save(update_fields=["score", "correct_answers", "total_time"])
-        return Response(arena_game_payload(arena, participant, request))
+        feedback = dict(state)
+        feedback.update({
+            "answered": True,
+            "selected_option_id": option.id,
+            "is_correct": is_correct,
+            "correct_option_id": question.options.filter(is_correct=True).values_list("id", flat=True).first(),
+        })
+        return Response(feedback)
 
 
 class QuizDetailView(APIView):
