@@ -435,6 +435,10 @@ class LeaderboardView(APIView):
             days = 7 if period == "week" else 30
             transactions = transactions.filter(created_at__date__gte=timezone.localdate() - timedelta(days=days - 1))
         rows = list(transactions.values("user_id", "user__username", "user__first_name", "user__last_name", "user__telegram_full_name", "user__avatar").annotate(points=Sum("points")).order_by("-points", "user__username")[:100])
+        today_start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+        previous_transactions = transactions.filter(created_at__lt=today_start)
+        previous_rows = list(previous_transactions.values("user_id").annotate(points=Sum("points")).order_by("-points", "user__username"))
+        previous_ranks = {row["user_id"]: index for index, row in enumerate(previous_rows, 1)}
         user_rank = None
         result = []
         for index, row in enumerate(rows, 1):
@@ -444,5 +448,18 @@ class LeaderboardView(APIView):
             if avatar and not avatar.startswith("http"):
                 avatar = request.build_absolute_uri(f"{settings.MEDIA_URL}{avatar.lstrip('/')}" )
             full_name = row["user__telegram_full_name"] or " ".join(filter(None, [row["user__first_name"], row["user__last_name"]])) or row["user__username"]
-            result.append({"rank": index, "username": row["user__username"], "full_name": full_name, "avatar": avatar, "points": row["points"], "is_me": request.user.is_authenticated and row["user_id"] == request.user.id})
+            previous_rank = previous_ranks.get(row["user_id"])
+            if previous_rank is None:
+                rank_change = "new"
+                rank_delta = None
+            elif previous_rank > index:
+                rank_change = "up"
+                rank_delta = previous_rank - index
+            elif previous_rank < index:
+                rank_change = "down"
+                rank_delta = index - previous_rank
+            else:
+                rank_change = "same"
+                rank_delta = 0
+            result.append({"rank": index, "previous_rank": previous_rank, "rank_change": rank_change, "rank_delta": rank_delta, "username": row["user__username"], "full_name": full_name, "avatar": avatar, "points": row["points"], "is_me": request.user.is_authenticated and row["user_id"] == request.user.id})
         return Response({"period": period, "user_rank": user_rank, "results": result})
