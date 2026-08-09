@@ -1,4 +1,5 @@
 import uuid
+import secrets
 
 from django.db import models
 from django.utils.text import slugify
@@ -9,7 +10,10 @@ from apps.users.models import User
 
 
 def generate_arena_code():
-    return uuid.uuid4().hex[:8].upper()
+    while True:
+        code = str(secrets.randbelow(90000) + 10000)
+        if not Arena.objects.filter(code=code).exists():
+            return code
 
 
 class Quiz(models.Model):
