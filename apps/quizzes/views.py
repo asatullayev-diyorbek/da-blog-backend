@@ -257,7 +257,7 @@ class ArenaGameView(APIView):
         participant.correct_answers += int(is_correct)
         participant.total_time += response_time
         participant.save(update_fields=["score", "correct_answers", "total_time"])
-        return Response(arena_game_payload(arena, participant))
+        return Response(arena_game_payload(arena, participant, request))
 
 
 class QuizDetailView(APIView):
