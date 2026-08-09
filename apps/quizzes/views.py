@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import AnswerOption, Arena, ArenaParticipant, ArenaQuestion, PointTransaction, Question, Quiz, QuizAttempt, UserBadge, UserGamification
+from .models import AnswerOption, Arena, ArenaAnswer, ArenaParticipant, ArenaQuestion, PointTransaction, Question, Quiz, QuizAttempt, UserBadge, UserGamification
 from .serializers import QuestionSerializer, QuizAttemptSerializer, QuizDetailSerializer, QuizListSerializer
 from .services import award_arena_points, award_attempt_points
 
