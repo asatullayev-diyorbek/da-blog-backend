@@ -102,6 +102,14 @@ class ArenaCreateView(APIView):
 
 def arena_payload(arena, request):
     participants = arena.participants.select_related("user").all()
+    def avatar_url(user):
+        if not user.avatar:
+            return None
+        avatar = user.avatar.url
+        if avatar.startswith("http"):
+            return avatar
+        return request.build_absolute_uri(avatar) if request else f"{settings.MEDIA_URL}{avatar.lstrip('/')}"
+
     return {
         "id": str(arena.id),
         "code": arena.code,
@@ -115,7 +123,7 @@ def arena_payload(arena, request):
             "id": item.user_id,
             "username": item.user.username,
             "full_name": item.user.telegram_full_name or item.user.get_full_name() or item.user.username,
-            "avatar": item.user.avatar.url if item.user.avatar else None,
+            "avatar": avatar_url(item.user),
             "is_owner": item.is_owner,
             "score": item.score,
             "correct_answers": item.correct_answers,
@@ -183,10 +191,10 @@ def finish_arena_if_needed(arena):
     award_arena_points(arena)
 
 
-def arena_game_payload(arena, participant):
+def arena_game_payload(arena, participant, request=None):
     finish_arena_if_needed(arena)
     if arena.status == "finished":
-        return {"status": "finished", "participants": arena_payload(arena, None)["participants"]}
+        return {"status": "finished", "participants": arena_payload(arena, request)["participants"]}
     elapsed = max(0, int((timezone.now() - arena.started_at).total_seconds()))
     question_index = min(elapsed // arena.question_duration, arena.question_count - 1)
     remaining_seconds = arena.question_duration - (elapsed % arena.question_duration)
@@ -199,7 +207,7 @@ def arena_game_payload(arena, participant):
         "remaining_seconds": remaining_seconds,
         "answered": answered,
         "question": QuestionSerializer(arena_question.question).data,
-        "participants": arena_payload(arena, None)["participants"],
+        "participants": arena_payload(arena, request)["participants"],
     }
 
 
@@ -214,7 +222,7 @@ class ArenaGameView(APIView):
         participant = self.get_participant(arena, request)
         if arena.status == "waiting":
             return Response({"status": "waiting", "participants": arena_payload(arena, request)["participants"]})
-        return Response(arena_game_payload(arena, participant))
+        return Response(arena_game_payload(arena, participant, request))
 
     @transaction.atomic
     def post(self, request, code):
@@ -222,7 +230,7 @@ class ArenaGameView(APIView):
         participant = self.get_participant(arena, request)
         if arena.status != "started":
             return Response({"detail": "Arena hozir javob qabul qilmayapti."}, status=400)
-        state = arena_game_payload(arena, participant)
+        state = arena_game_payload(arena, participant, request)
         if state["status"] != "started":
             return Response(state)
         question_id = request.data.get("question_id")
