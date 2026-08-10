@@ -49,7 +49,9 @@ class Command(BaseCommand):
 
         lesson.course = css_course
         lesson.order = 1
-        lesson.save(update_fields=["course", "order"])
+        lesson.title = "1-Dars: CSS ga Kirish — Inline, Internal, External va Selektorlar"
+        lesson.slug = "1-dars-css-ga-kirish-inline-internal-external-va-selektorlar"
+        lesson.save(update_fields=["course", "order", "title", "slug"])
 
         action = "yaratildi" if created else "yangilandi"
         self.stdout.write(
