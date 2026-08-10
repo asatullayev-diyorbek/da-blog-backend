@@ -15,10 +15,6 @@ class Command(BaseCommand):
         if not html_course:
             raise CommandError("html-for-beginner kursi topilmadi.")
 
-        lesson = Lesson.objects.filter(course=html_course, order=8).first()
-        if not lesson:
-            raise CommandError("HTML kursidagi 8-dars topilmadi.")
-
         instructor = User.objects.filter(username="diyorbek").first() or html_course.instructor
         if not instructor:
             raise CommandError("Kurs instruktori topilmadi.")
@@ -46,6 +42,13 @@ class Command(BaseCommand):
                 "featured": False,
             },
         )
+
+        lesson = (
+            Lesson.objects.filter(course=html_course, order=8).first()
+            or Lesson.objects.filter(course=css_course, order=1).first()
+        )
+        if not lesson:
+            raise CommandError("HTML kursidagi 8-dars topilmadi.")
 
         lesson.course = css_course
         lesson.order = 1
