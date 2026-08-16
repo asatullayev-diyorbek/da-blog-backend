@@ -51,7 +51,26 @@ class QuizDetailSerializer(QuizListSerializer):
 class QuizAttemptSerializer(serializers.ModelSerializer):
     quiz_title = serializers.CharField(source="quiz.title", read_only=True)
     quiz_slug = serializers.CharField(source="quiz.slug", read_only=True)
+    question_results = serializers.SerializerMethodField()
+
+    def get_question_results(self, obj):
+        def normalize(value):
+            return " ".join(str(value or "").strip().split()).casefold()
+
+        results = []
+        for question in obj.quiz.questions.all():
+            submitted = obj.answers.get(str(question.id), obj.answers.get(question.id)) if isinstance(obj.answers, dict) else None
+            if obj.quiz.quiz_type == "code_fix":
+                received = submitted if isinstance(submitted, list) else [submitted] if submitted is not None else []
+                expected = [normalize(item) for item in (question.code_answers or [])]
+                received = [normalize(item) for item in received]
+                is_correct = len(received) == len(expected) and all(received[index] == item for index, item in enumerate(expected))
+            else:
+                selected = question.options.filter(id=submitted).first() if str(submitted).isdigit() else None
+                is_correct = bool(selected and selected.is_correct)
+            results.append({"question_id": question.id, "order": question.order, "is_correct": is_correct})
+        return results
 
     class Meta:
         model = QuizAttempt
-        fields = ["id", "quiz", "quiz_slug", "quiz_title", "score", "correct_answers", "total_questions", "passed", "started_at", "completed_at"]
+        fields = ["id", "quiz", "quiz_slug", "quiz_title", "score", "correct_answers", "total_questions", "passed", "started_at", "completed_at", "question_results"]
