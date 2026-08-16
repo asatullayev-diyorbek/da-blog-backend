@@ -346,11 +346,26 @@ class QuizSubmitView(APIView):
         if not isinstance(submitted, dict):
             return Response({"answers": "answers obyekt ko'rinishida bo'lishi kerak."}, status=400)
 
-        question_ids = set(attempt.quiz.questions.values_list("id", flat=True))
-        answer_ids = {int(value) for value in submitted.values() if str(value).isdigit()}
-        valid_options = AnswerOption.objects.filter(question_id__in=question_ids, id__in=answer_ids).select_related("question")
-        selected = {str(option.question_id): option for option in valid_options}
-        correct = sum(1 for question_id in question_ids if selected.get(str(question_id)) and selected[str(question_id)].is_correct)
+        questions = list(attempt.quiz.questions.all())
+        question_ids = {question.id for question in questions}
+        if attempt.quiz.quiz_type == "code_fix":
+            def normalize(value):
+                return " ".join(str(value or "").strip().split()).casefold()
+
+            correct = 0
+            for question in questions:
+                answer = submitted.get(str(question.id), submitted.get(question.id, []))
+                if not isinstance(answer, list):
+                    answer = [answer]
+                expected = [normalize(item) for item in (question.code_answers or [])]
+                received = [normalize(item) for item in answer]
+                if len(received) == len(expected) and all(received[index] == item for index, item in enumerate(expected)):
+                    correct += 1
+        else:
+            answer_ids = {int(value) for value in submitted.values() if str(value).isdigit()}
+            valid_options = AnswerOption.objects.filter(question_id__in=question_ids, id__in=answer_ids).select_related("question")
+            selected = {str(option.question_id): option for option in valid_options}
+            correct = sum(1 for question_id in question_ids if selected.get(str(question_id)) and selected[str(question_id)].is_correct)
         total = len(question_ids)
         score = round(correct * 100 / total) if total else 0
 

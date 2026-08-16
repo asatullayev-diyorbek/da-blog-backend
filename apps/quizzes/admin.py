@@ -13,14 +13,14 @@ class AnswerOptionInline(TabularInline):
 class QuestionInline(TabularInline):
     model = Question
     extra = 0
-    fields = ["order", "text", "explanation"]
+    fields = ["order", "text", "explanation", "code_template", "code_answers"]
     show_change_link = True
 
 
 @admin.register(Quiz)
 class QuizAdmin(ModelAdmin):
-    list_display = ["title", "course", "category", "topic", "lesson", "pass_score", "published", "created_at"]
-    list_filter = ["published", "randomize_questions"]
+    list_display = ["title", "quiz_type", "course", "category", "topic", "lesson", "pass_score", "published", "created_at"]
+    list_filter = ["published", "randomize_questions", "quiz_type"]
     search_fields = ["title", "description", "category", "topic"]
     prepopulated_fields = {"slug": ("title",)}
     inlines = [QuestionInline]

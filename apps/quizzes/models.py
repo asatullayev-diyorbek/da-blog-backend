@@ -17,6 +17,10 @@ def generate_arena_code():
 
 
 class Quiz(models.Model):
+    QUIZ_TYPE_CHOICES = [
+        ("choice", "Variantli test"),
+        ("code_fix", "Koddagi xatoni tuzatish"),
+    ]
     title = models.CharField(max_length=255, verbose_name="Sarlavha")
     slug = models.SlugField(unique=True, max_length=255, blank=True)
     description = models.TextField(blank=True, verbose_name="Tavsif")
@@ -30,6 +34,7 @@ class Quiz(models.Model):
     )
     category = models.CharField(max_length=100, blank=True, verbose_name="Kategoriya")
     topic = models.CharField(max_length=150, blank=True, verbose_name="Asosiy mavzu")
+    quiz_type = models.CharField(max_length=20, choices=QUIZ_TYPE_CHOICES, default="choice", verbose_name="Test turi")
     time_limit = models.PositiveIntegerField(default=0, verbose_name="Vaqt limiti (soniya)")
     pass_score = models.PositiveSmallIntegerField(default=60, verbose_name="O'tish foizi")
     randomize_questions = models.BooleanField(default=False, verbose_name="Savollarni aralashtirish")
@@ -92,6 +97,8 @@ class Question(models.Model):
         default="easy",
         verbose_name="Qiyinlik",
     )
+    code_template = models.TextField(blank=True, verbose_name="Kod shabloni")
+    code_answers = models.JSONField(default=list, blank=True, verbose_name="Kod blankalari javoblari")
 
     class Meta:
         ordering = ["order", "id"]

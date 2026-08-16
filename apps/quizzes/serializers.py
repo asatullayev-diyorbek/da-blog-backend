@@ -1,3 +1,5 @@
+import random
+
 from rest_framework import serializers
 
 from .models import AnswerOption, Question, Quiz, QuizAttempt
@@ -11,10 +13,18 @@ class AnswerOptionSerializer(serializers.ModelSerializer):
 
 class QuestionSerializer(serializers.ModelSerializer):
     options = AnswerOptionSerializer(many=True, read_only=True)
+    code_bank = serializers.SerializerMethodField()
+
+    def get_code_bank(self, obj):
+        if obj.quiz.quiz_type != "code_fix":
+            return []
+        bank = [str(answer) for answer in (obj.code_answers or [])]
+        random.shuffle(bank)
+        return bank
 
     class Meta:
         model = Question
-        fields = ["id", "text", "explanation", "order", "topic", "difficulty", "options"]
+        fields = ["id", "text", "explanation", "order", "topic", "difficulty", "options", "code_template", "code_bank"]
 
 
 class QuizListSerializer(serializers.ModelSerializer):
@@ -28,7 +38,7 @@ class QuizListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Quiz
-        fields = ["id", "title", "slug", "description", "lesson", "lesson_title", "course", "course_slug", "category", "topic", "time_limit", "pass_score", "questions_count", "xp_reward"]
+        fields = ["id", "title", "slug", "description", "lesson", "lesson_title", "course", "course_slug", "category", "topic", "quiz_type", "time_limit", "pass_score", "questions_count", "xp_reward"]
 
 
 class QuizDetailSerializer(QuizListSerializer):
