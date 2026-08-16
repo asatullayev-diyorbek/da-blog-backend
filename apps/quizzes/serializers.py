@@ -68,7 +68,13 @@ class QuizAttemptSerializer(serializers.ModelSerializer):
             else:
                 selected = question.options.filter(id=submitted).first() if str(submitted).isdigit() else None
                 is_correct = bool(selected and selected.is_correct)
-            results.append({"question_id": question.id, "order": question.order, "is_correct": is_correct})
+            results.append({
+                "question_id": question.id,
+                "order": question.order,
+                "text": question.text,
+                "explanation": question.explanation,
+                "is_correct": is_correct,
+            })
         return results
 
     class Meta:
