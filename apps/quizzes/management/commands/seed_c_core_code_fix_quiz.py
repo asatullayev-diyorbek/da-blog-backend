@@ -4,7 +4,14 @@ from apps.courses.models import Course, Lesson
 from apps.quizzes.models import Question, Quiz
 
 
-def question(text, topic, difficulty, explanation, code_template, *answers):
+def question(text, topic, *parts):
+    # Difficulty is optional so a content typo cannot shift the code template
+    # into the answer field. Existing entries without it default to easy.
+    if parts and parts[0] in {"easy", "medium", "hard"}:
+        difficulty, explanation, code_template, *answers = parts
+    else:
+        difficulty = "easy"
+        explanation, code_template, *answers = parts
     return {
         "text": text,
         "topic": topic,
